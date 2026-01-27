@@ -26,7 +26,7 @@ In this post, we'll look at how to create a simple line chart using Chart.js. We
           label: 'Random Data',
           data: data,
           borderColor: 'rgb(75, 192, 192)',
-          tension: 0.1,
+          tension: 0.0,
           pointRadius: 0, // No points
           pointHitRadius: 10,
           fill: false
