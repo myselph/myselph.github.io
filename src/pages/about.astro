@@ -1,63 +1,175 @@
 ---
-import AboutHeroImage from '../assets/blog-placeholder-about.jpg';
-import Layout from '../layouts/BlogPost.astro';
+import AboutHeroImage from "../assets/blog-placeholder-about.jpg";
+import Layout from "../layouts/BlogPost.astro";
 ---
 
 <Layout
 	title="About Me"
-	description="Lorem ipsum dolor sit amet"
-	pubDate={new Date('August 08 2021')}
+	description="Hubert Eichner - Curriculum Vitae, Interests, Publications"
+	pubDate={new Date("January 27 2025")}
 	heroImage={AboutHeroImage}
 >
-	<p>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-		labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo
-		viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam
-		adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus
-		et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus
-		vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque
-		sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
-	</p>
-
-	<p>
-		Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non
-		tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non
-		blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna
-		porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis
-		massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc.
-		Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis
-		bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra
-		massa massa ultricies mi.
-	</p>
-
-	<p>
-		Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl
-		suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet
-		nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae
-		turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem
-		dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat
-		semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus
-		vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum
-		facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam
-		vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla
-		urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
-	</p>
-
-	<p>
-		Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper
-		viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc
-		scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur
-		gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus
-		pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim
-		blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id
-		cursus metus aliquam eleifend mi.
-	</p>
-
-	<p>
-		Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta
-		nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam
-		tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci
-		ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar
-		proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
-	</p>
+	<ul style="list-style-type:none;">
+		<li><h4>Hubert Eichner</h4></li>
+		<li>GMail: hubert.georg.eichner</li>
+		<li>Seattle, WA</li>
+	</ul>
+	<ul style="list-style-type:none;">
+		<li>2001 - 2007: CS student at TU Munich</li>
+		<li>
+			2008 - 2012: PhD student at Max-Planck-Institute of Neurobiology
+		</li>
+		<li>2012 - 2015: Senior Scientist at Microsoft, Bellevue WA</li>
+		<li>
+			2015 - 2024: Senior Staff Software Engineer at Google, Seattle WA
+		</li>
+		<li>
+			internships, summer courses, student jobs:
+			<ul>
+				<li>2004: Transaction Software GmbH</li>
+				<li>2004 - 2006: admin at TUM's InfiniBand cluster</li>
+				<li>2005: IBM Extreme Blue, Logic Design</li>
+				<li>
+					2009: student @ Methods in Computational Neuroscience, Woods
+					Hole, MA
+				</li>
+				<li>2011: teaching assistant @ MCN, Woods Hole, MA</li>
+			</ul>
+		</li>
+		<li>
+			interests:
+			<ul>
+				<li>artifical intelligence & machine learning</li>
+				<li>
+					physics simulations (game physics, neural simulations, ...)
+				</li>
+				<li>stuff I can't figure out</li>
+			</ul>
+		</li>
+		<li>
+			theses & some publications:
+			<ul>
+				<li>
+					<a href="/pdf/Eichner_Dissertation.pdf"
+						>Internal Structure of the Fly Elementare Motion
+						Detector</a
+					> (2012). PhD thesis
+				</li>
+				<li>
+					<a href="/pdf/eichner_diploma_thesis.pdf"
+						>Parallel Neural Simulations on Multi-Core Processsors</a
+					> (2007). Diploma thesis
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/2404.10764"
+						>Eichner et al. Confidential Federated Computations
+						(2024)
+					</a>. Work done at Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/2107.06917"
+						>Wang et al. A Field Guide to Federated Optimization
+						(2021)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/pdf/1912.04977.pdf"
+						>Kairouz et al. Advances and Open Problems in Federated
+						Learning (2021). Foundations and Trends in Machine
+						Learning, 14(1-2).</a
+					>, section "Addressing System Challenges". Work done at
+					Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/1910.10252"
+						>Wang, Mathews, Kiddon, Eichner, Beaufays, Ramage.
+						Federated Evaluation of On-Device Personalization (2019)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a
+						href="http://proceedings.mlr.press/v97/eichner19a/eichner19a.pdf"
+						>Eichner, Koren, McMahan, Srebro, Talwar. Semi-Cyclic
+						Stochastic Gradient Descent (2019)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/1902.01046"
+						>Bonawitz, Eichner, Grieskamp, Huba, Ingerman, Ivanov,
+						Kiddon, Konecny, Mazzocchi, McMahan, Van Overveldt,
+						Petrou, Ramage, Roselander. Towards Federated Learning
+						at Scale: System Design (2019)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/1812.02903"
+						>Yang, Andrew, Eichner, Sun, Li, Kong, Ramage, Beaufays.
+						Applied Federated Learning: Improving Google Keyboard
+						Query Suggestions (2018)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a href="https://arxiv.org/abs/1811.03604"
+						>Hard, Rao, Mathews, Beaufays, Augenstein, Eichner,
+						Kiddon, Ramage. Federated Learning for Mobile Keyboard
+						Prediction (2018)</a
+					>. Work done at Google.
+				</li>
+				<li>
+					<a
+						href="https://research.googleblog.com/2017/04/federated-learning-collaborative.html"
+					>
+						Federated Learning: Collaborative Machine Learning
+						without Centralized Training Data</a
+					> (2017). Blog post and work done at Google.
+				</li>
+				<li>
+					Joesch, Weber, Eichner, Borst. Functional specialization of
+					parallel motion detection circuits in the fly (2013). J
+					Neurosci, 33
+				</li>
+				<li>
+					Eichner, Joesch, Schnell, Reiff, Borst. Internal Structure
+					of the Fly Elementare Motion Detector (2011). NEURON, 70(6)
+				</li>
+				<li>
+					Eichner, Borst. Hands-On Parameter Search for Neural
+					Simulations by a MIDI-Controller (2011). PLoS ONE, 6(10)
+				</li>
+				<li>
+					Spavieri, Eichner, Borst. Coding Efficiency of Fly Motion
+					Processing is Set by Firing Rate, Not Firing Precision
+					(2010). PLoS Computational Biology, 6(7)
+				</li>
+				<li>
+					Eichner, Klug, Borst. Neural Simulations on Multi-Core
+					Architectures (2009). Frontiers in Neuroinformatics, 3
+				</li>
+				<li>
+					Hines, Eichner, Schuermann. Neuron Splitting in
+					Compute-Bound Parallel Network Simulations Enables Runtime
+					Scaling With Twice as Many Processors (2008). Journal of
+					Computational Neuroscience, 25
+				</li>
+				<li>
+					Weber, Eichner, Cuntz, Borst. Eigenanalysis of a Neural
+					Network for Optic Flow Processing (2008). New Journal of
+					Physics, 10
+				</li>
+				<li>
+					Stodden, Eichner, Walter, Trinitis. Hardware Instruction
+					Counting for Log-Based Rollback Recovery on x86-Family
+					Processors. Service Availability, Lecture Notes in Computer
+					Science, 4328
+				</li>
+				<li>
+					Eichner, Trinitis, Klug. Implementation of a DSM-System on
+					Top of InfiniBand. Special Session on "Parallel and
+					Distributed Storage Systems" at 1th Euromicro International
+					Conference on Parallel, Distributed and Network-based
+					Processing (PDP2006), Montbeliard-Sochaux, France
+				</li>
+			</ul>
+		</li>
+	</ul>
 </Layout>
