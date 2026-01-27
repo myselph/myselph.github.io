@@ -1,0 +1,553 @@
+---
+import katex from "katex";
+
+const labels = {
+    C: katex.renderToString("C", { throwOnError: false }),
+    GKMax: katex.renderToString("G_{K,max}", { throwOnError: false }),
+    GNaMax: katex.renderToString("G_{Na,max}", { throwOnError: false }),
+    Gm: katex.renderToString("G_m", { throwOnError: false }),
+    EK: katex.renderToString("E_K", { throwOnError: false }),
+    ENa: katex.renderToString("E_{Na}", { throwOnError: false }),
+    VRest: katex.renderToString("V_{rest}", { throwOnError: false }),
+    V0: katex.renderToString("V(0)", { throwOnError: false }),
+    tStop: katex.renderToString("t_{stop}", { throwOnError: false }),
+    tInjStart: katex.renderToString("t_{inj,start}", { throwOnError: false }),
+    tInjStop: katex.renderToString("t_{inj,stop}", { throwOnError: false }),
+    IDC: katex.renderToString("I_{DC}", { throwOnError: false }),
+    IRand: katex.renderToString("I_{rand}", { throwOnError: false }),
+    Itau: katex.renderToString("I_{\\tau}", { throwOnError: false }),
+};
+---
+
+<div class="simulation-container">
+    <div class="chart-wrapper">
+        <canvas id="hh-chart"></canvas>
+    </div>
+
+    <div id="error-message" class="error-text"></div>
+
+    <div class="controls-grid">
+        <div class="control-group">
+            <label for="C" aria-label="C"
+                ><span set:html={labels.C} /> (µF/cm²)</label
+            >
+            <input
+                type="number"
+                id="C"
+                min="0.001"
+                max="100"
+                value="1"
+                step="0.1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="GKMax" aria-label="GKMax"
+                ><span set:html={labels.GKMax} /> (mS/cm²)</label
+            >
+            <input
+                type="number"
+                id="GKMax"
+                min="0"
+                max="500"
+                value="36"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="GNaMax" aria-label="GNaMax"
+                ><span set:html={labels.GNaMax} /> (mS/cm²)</label
+            >
+            <input
+                type="number"
+                id="GNaMax"
+                min="0"
+                max="500"
+                value="120"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="Gm" aria-label="Gm"
+                ><span set:html={labels.Gm} /> (mS/cm²)</label
+            >
+            <input
+                type="number"
+                id="Gm"
+                min="0"
+                max="10"
+                value="0.3"
+                step="0.1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="EK" aria-label="EK"
+                ><span set:html={labels.EK} /> (mV)</label
+            >
+            <input
+                type="number"
+                id="EK"
+                min="-200"
+                max="200"
+                value="-12"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="ENa" aria-label="ENa"
+                ><span set:html={labels.ENa} /> (mV)</label
+            >
+            <input
+                type="number"
+                id="ENa"
+                min="-200"
+                max="200"
+                value="115"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="VRest" aria-label="VRest"
+                ><span set:html={labels.VRest} /> (mV)</label
+            >
+            <input
+                type="number"
+                id="VRest"
+                min="-200"
+                max="200"
+                value="10.613"
+                step="0.1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="V0" aria-label="V0"
+                ><span set:html={labels.V0} /> (mV)</label
+            >
+            <input
+                type="number"
+                id="V0"
+                min="-200"
+                max="200"
+                value="0"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="tStop" aria-label="tStop"
+                ><span set:html={labels.tStop} /> (ms)</label
+            >
+            <input
+                type="number"
+                id="tStop"
+                min="0"
+                max="2000"
+                value="200"
+                step="10"
+            />
+        </div>
+        <div class="control-group">
+            <label for="tInjStart" aria-label="tInjStart"
+                ><span set:html={labels.tInjStart} /> (ms)</label
+            >
+            <input
+                type="number"
+                id="tInjStart"
+                min="0"
+                max="2000"
+                value="25"
+                step="5"
+            />
+        </div>
+        <div class="control-group">
+            <label for="tInjStop" aria-label="tInjStop"
+                ><span set:html={labels.tInjStop} /> (ms)</label
+            >
+            <input
+                type="number"
+                id="tInjStop"
+                min="0"
+                max="2000"
+                value="175"
+                step="5"
+            />
+        </div>
+        <div class="control-group">
+            <label for="IDC" aria-label="IDC"
+                ><span set:html={labels.IDC} /> (nA/cm²)</label
+            >
+            <input
+                type="number"
+                id="IDC"
+                min="0"
+                max="200"
+                value="0"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="IRand" aria-label="IRand"
+                ><span set:html={labels.IRand} /> (nA/cm²)</label
+            >
+            <input
+                type="number"
+                id="IRand"
+                min="0"
+                max="200"
+                value="35"
+                step="1"
+            />
+        </div>
+        <div class="control-group">
+            <label for="Itau" aria-label="Itau"
+                ><span set:html={labels.Itau} /> (ms)</label
+            >
+            <input
+                type="number"
+                id="Itau"
+                min="0.1"
+                max="10"
+                value="1"
+                step="0.1"
+            />
+        </div>
+    </div>
+
+    <div class="button-wrapper">
+        <button id="run-btn" class="primary-button">Run Simulation</button>
+    </div>
+</div>
+
+<style>
+    .simulation-container {
+        margin: 2rem 0;
+        font-family: var(--font-sans, system-ui, sans-serif);
+    }
+
+    .chart-wrapper {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        margin-bottom: 2rem;
+        aspect-ratio: 16 / 9;
+    }
+
+    .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .control-group label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .control-group input {
+        padding: 0.4rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        width: 100%;
+    }
+
+    .button-wrapper {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .primary-button {
+        background-color: #2563eb;
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .primary-button:hover {
+        background-color: #1d4ed8;
+    }
+
+    .error-text {
+        color: #dc2626;
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+        min-height: 1.25rem;
+        text-align: center;
+        font-weight: 500;
+    }
+</style>
+
+<script>
+    import {
+        Chart,
+        LineController,
+        LineElement,
+        PointElement,
+        LinearScale,
+        Title,
+        CategoryScale,
+        Legend,
+    } from "chart.js";
+
+    Chart.register(
+        LineController,
+        LineElement,
+        PointElement,
+        LinearScale,
+        Title,
+        CategoryScale,
+        Legend,
+    );
+
+    class HH {
+        dt: number = 0.025; // ms
+        C: number;
+        GKMax: number;
+        GNaMax: number;
+        EK: number;
+        ENa: number;
+        Gm: number;
+        VRest: number;
+        V: number;
+        n: number = 0.32;
+        m: number = 0.05;
+        h: number = 0.6;
+        INa: number = 0;
+        IK: number = 0;
+        Im: number = 0;
+        Iinj: number = 0;
+
+        constructor(
+            C: number,
+            GKMax: number,
+            GNaMax: number,
+            Gm: number,
+            EK: number,
+            ENa: number,
+            VRest: number,
+            V0: number,
+        ) {
+            this.C = C;
+            this.GKMax = GKMax;
+            this.GNaMax = GNaMax;
+            this.EK = EK;
+            this.ENa = ENa;
+            this.Gm = Gm;
+            this.VRest = VRest;
+            this.V = V0;
+        }
+
+        alphaN(V: number): number {
+            if (V === 10) return this.alphaN(V + 0.001);
+            return (10 - V) / (100 * (Math.exp((10 - V) / 10) - 1));
+        }
+        betaN(V: number): number {
+            return 0.125 * Math.exp(-V / 80);
+        }
+
+        alphaM(V: number): number {
+            if (V === 25) return this.alphaM(V + 0.001);
+            return (25 - V) / (10 * (Math.exp((25 - V) / 10) - 1));
+        }
+        betaM(V: number): number {
+            return 4 * Math.exp(-V / 18);
+        }
+
+        alphaH(V: number): number {
+            return 0.07 * Math.exp(-V / 20);
+        }
+        betaH(V: number): number {
+            return 1 / (Math.exp((30 - V) / 10) + 1);
+        }
+
+        step() {
+            const aN = this.alphaN(this.V);
+            const bN = this.betaN(this.V);
+            const aM = this.alphaM(this.V);
+            const bM = this.betaM(this.V);
+            const aH = this.alphaH(this.V);
+            const bH = this.betaH(this.V);
+
+            const tauN = 1 / (aN + bN);
+            const tauM = 1 / (aM + bM);
+            const tauH = 1 / (aH + bH);
+            const nInf = aN * tauN;
+            const mInf = aM * tauM;
+            const hInf = aH * tauH;
+
+            this.n += (this.dt / tauN) * (nInf - this.n);
+            this.m += (this.dt / tauM) * (mInf - this.m);
+            this.h += (this.dt / tauH) * (hInf - this.h);
+
+            this.INa =
+                this.GNaMax *
+                Math.pow(this.m, 3) *
+                this.h *
+                (this.ENa - this.V);
+            this.IK = this.GKMax * Math.pow(this.n, 4) * (this.EK - this.V);
+            this.Im = this.Gm * (this.VRest - this.V);
+
+            this.V +=
+                (this.dt / this.C) * (this.INa + this.IK + this.Im + this.Iinj);
+        }
+    }
+
+    let chart: Chart;
+
+    function initChart() {
+        const ctx = document.getElementById("hh-chart") as HTMLCanvasElement;
+        chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                datasets: [
+                    {
+                        label: "Membrane Voltage (mV)",
+                        data: [],
+                        borderColor: "#2563eb",
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        yAxisID: "y",
+                    },
+                    {
+                        label: "Injected Current (nA/cm²)",
+                        data: [],
+                        borderColor: "#dc2626",
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        yAxisID: "y1",
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: "linear",
+                        position: "bottom",
+                        title: { display: true, text: "Time (ms)" },
+                    },
+                    y: {
+                        type: "linear",
+                        position: "left",
+                        title: { display: true, text: "Voltage (mV)" },
+                        suggestedMin: -50,
+                        suggestedMax: 150,
+                    },
+                    y1: {
+                        type: "linear",
+                        position: "right",
+                        title: { display: true, text: "Current (nA/cm²)" },
+                        grid: { drawOnChartArea: false },
+                        suggestedMin: -50,
+                        suggestedMax: 150,
+                    },
+                },
+                plugins: {
+                    legend: { position: "top" },
+                },
+            },
+        });
+    }
+
+    function runSimulation() {
+        const getVal = (id: string) =>
+            parseFloat((document.getElementById(id) as HTMLInputElement).value);
+
+        const C = getVal("C");
+        const GKMax = getVal("GKMax");
+        const GNaMax = getVal("GNaMax");
+        const Gm = getVal("Gm");
+        const EK = getVal("EK");
+        const ENa = getVal("ENa");
+        const VRest = getVal("VRest");
+        const V0 = getVal("V0");
+        const tStop = getVal("tStop");
+        const tInjStart = getVal("tInjStart");
+        const tInjStop = getVal("tInjStop");
+        const IDC = getVal("IDC");
+        const IRand = getVal("IRand");
+        const Itau = getVal("Itau");
+
+        const hh = new HH(C, GKMax, GNaMax, Gm, EK, ENa, VRest, V0);
+        const errorDiv = document.getElementById("error-message");
+        if (errorDiv) errorDiv.textContent = "";
+
+        const Vs: { x: number; y: number }[] = [];
+        const Iinjs: { x: number; y: number }[] = [];
+        const plotSampleRate = Math.ceil(tStop / 1000 / hh.dt); // About 1000 points
+
+        let i = 0;
+        for (let t = 0; t < tStop; t += hh.dt) {
+            let rawInj = 0;
+            if (t > tInjStart && t < tInjStop) {
+                rawInj = IDC + IRand * 2 * (Math.random() - 0.5);
+            }
+
+            hh.Iinj += (hh.dt / Itau) * (rawInj - hh.Iinj);
+            hh.step();
+
+            if (i >= plotSampleRate) {
+                Vs.push({ x: t, y: hh.V });
+                Iinjs.push({ x: t, y: hh.Iinj });
+                i = 0;
+            }
+            i++;
+
+            if (isNaN(hh.V)) {
+                if (errorDiv)
+                    errorDiv.textContent =
+                        "Simulation produced NaN (Instability)";
+                break;
+            }
+        }
+
+        chart.data.datasets[0].data = Vs;
+        chart.data.datasets[1].data = Iinjs;
+
+        const scales = (chart.options as any).scales;
+        if (scales && scales.x) {
+            scales.x.max = tStop;
+        }
+        chart.update();
+    }
+
+    // Setup
+    document.addEventListener("astro:page-load", () => {
+        initChart();
+        runSimulation();
+
+        document
+            .getElementById("run-btn")
+            ?.addEventListener("click", runSimulation);
+    });
+
+    // Fallback for initial load
+    if (!chart) {
+        window.addEventListener("load", () => {
+            if (!chart) {
+                initChart();
+                runSimulation();
+                document
+                    .getElementById("run-btn")
+                    ?.addEventListener("click", runSimulation);
+            }
+        });
+    }
+</script>

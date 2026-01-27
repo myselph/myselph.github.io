@@ -13,6 +13,7 @@
     "@astrojs/rss": "^4.0.15",
     "@astrojs/sitemap": "^3.7.0",
     "astro": "^5.16.15",
+    "chart.js": "^4.5.1",
     "katex": "^0.16.28",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
