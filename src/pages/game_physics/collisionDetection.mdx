@@ -1,0 +1,54 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Collision Detection
+description: Brief description and illustration of 2D game physics collision detection (broad phase with AABBs and narrow phase)
+---
+
+- Collision detection usually consists of several phases, at least a broad phase and a narrow phase. During the broad phase, a very fast pruning algorithm is used to identify collision candidates - that is, pairs of bodies that *might* collide. These pairs are then tested for actual collisions, and geometrical details of the collision, in the narrow phase.
+- I haven't dived into collision detection much but it seems to be computationally most intensive part of physics engines. The narrow phase is much more complex for 3D simulations. I'll briefly, for the sake of completeness, describe the algorithm I came up with for the 2D simulations in the previous pages of this tutorial.
+
+## Broad phase
+
+<div class="thumb tright">
+    <div class="thumbinner" style="width:402px;">
+        <img alt="AABB overlapping" src="/gamePhysics/images/400px-Aabb.png" width="400" height="217" class="thumbimage" />
+        <div class="thumbcaption">overlapping axis aligned bounding boxes (red) of two bodies (black) that collide (left) or do not collide (right)</div>
+    </div>
+</div>
+
+- A very common choice of algorithm for the broad phase is to compute the *axis aligned bounding box* (*AABB*) for each body (optimization: only recompute for those that have moved)
+- The AABB is a bounding box of a body that consists of rectangle lines (in 3D: cube faces) parallel to the x and y axes. It is computed by simply taking the minimum and the maximum of all vertices x and y positions.
+- Then, compare the AABBs of each body pair ($\frac{n(n-1)}{2}$ comparisons for $n$ bodies) to detect AABB overlaps. This check for overlaps is very easy: one tests whether the AABB of bodyA is completey left of, or completely right of, or completely above, or completely below, the AABB of body B. If any of these conditions is true, there is no overlap; otherwise, they overlap.
+- If the AABBs do not overlap, the bodies do not collide. If the AABBs overlap, the bodies *may* collide, so add them to a list of collision candidates that is then processed in the narrow phase.
+- The graphic shows two configurations where the AABBs overlap, but only in one of the configurations, there is an actual collision.
+- There are some obvious optimizations one can implement - sorting the AABBs by their starting position, binary space-partitioning trees etc. I wanted to keep the code as simple as possible and used the most naive implementation described above. To dive into this topic, I'd recommend to start with Baraff's [SIGGRPAH01](http://www.pixar.com/companyinfo/research/pbm2001/pdf/notesg.pdf) tutorial, chapter 7.
+
+## Narrow Phase
+
+<div class="thumb tright">
+    <div class="thumbinner" style="width:302px;">
+        <img alt="two bodies colliding" src="/gamePhysics/images/300px-Collision.png" width="300" height="287" class="thumbimage" />
+        <div class="thumbcaption">two bodies colliding</div>
+    </div>
+</div>
+
+- In the narrow phase, the engine needs to determine
+    - **whether** the two bodies of a pair actually intersect, and
+    - the geometry of the intersection:
+        - what vertex penetrates another body
+        - what is body A and body B for setting up the constraint equations
+        - what is $\mathbf{p}_B$.
+- I assume I have only convex bodies.
+- To the right is again the picture from the inequality constraints section: by my own convention, if a vertex of a body is inside another body, this vertex is called $\mathbf{p}_A$, its body is body A; the other body is body B, and the projection of $\mathbf{p}_A$ onto the *correct* surface of body B is $\mathbf{p}_B$.
+
+<div class="thumb tleft">
+    <div class="thumbinner" style="width:402px;">
+        <img alt="PB computation" src="/gamePhysics/images/400px-PB.png" width="400" height="165" class="thumbimage" />
+        <div class="thumbcaption">collision of two bodies where the surface closest to the penetrating vertex (both in red) would not be a good choice. Instead, I compute which surface (green) the line from center of body A to $\mathbf{p}_A$ intersects with (green, left side of body B)</div>
+    </div>
+</div>
+
+- I iterate over each point of body A and look whether it lies inside body B, by computing its distance from each surface of body B. This is a simple projection onto the outward pointing surface normal, $d_{i,k} := (\mathbf{p}_{A,i}-\mathbf{p}_{B,k})^T\mathbf{n}_k$. If all distances are negative - i.e., $\mathbf{p}_{A,i}$ is on the inside of each surface - it's inside body B. This only works for convex bodies.
+- However, there is one tricky question: What is the *correct* surface, i.e. where does $\mathbf{p}_B$ lie? An intuitive choice might be the surface closest to $\mathbf{p}_A$, but that's not a good choice as the next figure with the colliding domino pieces illustrates: here, the surface closest to the colliding point (both in red) is not the one we'd actually want - applying impulses orthogonally to this surface would hardly resolve the collision. The correct side, i.e. where body B lies and where normal impulses should be applied - is the left side of body B.
+- I tried three algorithms to find the right surface; the one that worked best is to take the line from the center of body A to $\mathbf{p}_A$ (green line), then test with which side of body B this line intersects (red line) by a simple line intersection algorithm).
+- One pair of collision candidates can give rise to multiple actual collisions. I.e., if one vertex of body 1 is inside body 2, and one vertex of body 2 is inside body 1, the algorithm would compute two collisions, and either body would take the role of body A and of body B, respectively. Each collision leads to a separate constraint equation and applied impulses.

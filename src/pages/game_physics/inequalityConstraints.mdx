@@ -1,0 +1,106 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Inequality Constraints
+description: Tutorial, derivation and interactive Javascript simulation of 2D rigid body game physics with inequality constraints (collisions) & solver
+---
+
+## Overview
+
+- Inequality constraints are constraints of the form $C\geq 0$. The most common (only?) application for inequality constraints is resolving collisions and resting contacts.
+- The derivation and mathematics are nearly identical to equality constraints actually. The only difference, as you will see, is that only non-negative $\lambda$ are allowed. But first things first...
+- The constraint equation is $C(\mathbf{p}_1,\mathbf{p}_2)=\delta$, where delta is penetration depth - the distance of one body's penetrating vertex to the penetrated surface of body B. More about how this is expressed in terms of body A and body B geometry in the next section. $\delta<0$ means the bodies collide. One therefore requires $C\geq 0$
+- The reason this is an inequality constraint is that an equality constraint would not allow separation. Example of a book lying on a table:
+    - if only gravity force $mg$ acts, the constraint impulse must counteract the predicted downward velocity $\mathbf{v}=\mathbf{0}+\Delta t\mathbf{a}=-\Delta t g$
+    - if there is an upward force on the book (or other impulses applied to it) exactly counteracting gravity, the constraint impulse must be 0
+    - if the upward force is higher than gravity, the constraint impulse must still be 0 - i.e., not keep the book from separating - which illustrated that there is an inequality in the equation.
+- In the simulation, one proceeds until a collision occurs (detected by the collision detection engine). A collision implies $C<0$. The constraint solver aims to resolve the collision by requiring $\dot{C}\geq 0$, computing the required corrective impulse, and change the velocities.
+- In research papers, one often finds this problem being formulated as a *Linear Complementarity Problem*, a special case of a quadratic programming problem. From a didactic point of view, I think it makes more sense to show directly how collisions are resolved and inequality constraints are handled because the algorithm makes sense intuitively, then show up the parallels to LCPs.
+
+## Complete 2D derivation for colliding contacts
+
+- the following uses the cross product in 2D instead of time derivatives of 2D rotation matrices, in two variants:
+    - Definition for a scalar $\omega$: $\omega\times\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}-\omega y\\ \omega x\end{bmatrix}$. It can be derived from the 3D cross product by taking the angular velocity equations and assuming rotation in the x-y plane: $\mathbf{\omega}\times\mathbf{p}= \begin{bmatrix}0\\0\\\omega\end{bmatrix}\times\begin{bmatrix}x\\y\\0\end{bmatrix}=\begin{bmatrix}0\\0\\\omega\end{bmatrix} = \begin{bmatrix}-\omega y\\ \omega x\\ 0\end{bmatrix}$ and neglecting the z direction again
+    - Definition for two vectors: $\begin{bmatrix}x\\y\end{bmatrix}\times\begin{bmatrix}a\\b\end{bmatrix}=xb-ya$
+- the constraint equation is $C=(\mathbf{p}_A-\mathbf{p}_B)^T\mathbf{n}=\delta\geq 0$ (the projection onto the outward facing $\mathbf{n}$ is needed to give the constraint a direction, as opposed to the joint constraint where we simply used the squared length of $\mathbf{p}_A-\mathbf{p}_B$)
+- if collision detected ($C<0$), then ensure $\dot{C}\geq 0$. So as above, the time derivative $\dot{C}$ is computed.
+- For the following, I'll use an approximation I found in Erin Catto's slide that works pretty well - to simplify the formulas, $\mathbf{n}$ is assumed to be time-invariant (i.e. we treat it as a constant during differentiation). Then we arrive at
+- 
+$$
+\begin{array} {lcl} \dot{C} & = & (\dot{\mathbf{p}_A}-\dot{\mathbf{p}_B})^T\mathbf{n} \\ & = & (\begin{bmatrix}v_{A,x}\\ v_{A,y}\end{bmatrix} + \omega_A\times (\mathbf{p}_A-\mathbf{c}_A) - \begin{bmatrix}v_{B,x}\\ v_{B,y}\end{bmatrix} - \omega_B\times (\mathbf{p}_B-\mathbf{c}_B))\cdot\begin{bmatrix}n_x\\n_y\end{bmatrix}\\ & = & \begin{bmatrix}n_x\\ n_y\\ (\mathbf{p}_A-\mathbf{c}_A)\times\mathbf{n}\\ -n_x\\ -n_y\\ -(\mathbf{p}_B-\mathbf{c}_B)\times\mathbf{n}\end{bmatrix}^T \begin{bmatrix}v_{A,x}\\v_{A,y}\\\omega_A\\v_{B,x}\\v_{B,y}\\\omega_B\end{bmatrix} = \mathbf{J}\mathbf{v}\end{array}
+$$
+- The bias term is again $b=\frac{\beta}{\Delta t}C$.
+- If one wants "bouncy" collisions, the constraint for the post-impulse velocity does not require a zero normal velocity, but a fraction of the pre-impulse normal velocity $\mathbf{v}_\mathbf{n}^-$, i.e. $\dot{C} = (\dot{\mathbf{p}_A}-\dot{\mathbf{p}_B})^T\mathbf{n} \geq \epsilon \mathbf{v}_\mathbf{n}^{-}$, so the bias term becomes $b=\frac{\beta}{\Delta t}C+\epsilon\mathbf{v}_\mathbf{n}^-$.
+- as described in the previous section, the update step consists of $\mathbf{v}=\mathbf{v}+\mathbf{M}^{-1}\mathbf{P}=\mathbf{v}+\mathbf{M}^{-1}\mathbf{J}^T\lambda$, with $\lambda=-\frac{\mathbf{J}\mathbf{v}+b}{\mathbf{J}\mathbf{M}^{-1}\mathbf{J}^T}$, but to fulfill the non-penetration constraint, once clamps the total $\lambda\geq 0$. The reason is, $\lambda$ simply scales the outward-facing (repulsive) velocity impulse, and our constraint was to no allow attractive constraint impulses, i.e. negative $\lambda$. A bit more about this in the next section. There are several iterations, a different $\lambda$ being computed in each; what is clamped is not the individual $\lambda$ but the sum of all previous and this, the *accumulated* $\lambda$.
+- The graphic below shows two cases of a collision, the resulting impulses, and how they affect the bodies' linear and angular velocities. Note the ramp has infinite mass so the impulse does not change its velocity or position.
+
+![Two examples of how collisions are resolved](/gamePhysics/images/600px-Impulse.png)
+Two examples of how collisions are resolved by computing appropriate constraint impulses that change the linear and angular velocity of the involved bodies. First row: a body falls onto a ramp. An impulse vector (red), standing orthogonally on the penetrated surface, is applied to the cube's velocity (weighted by its mass). This leads to a change in its linear ($\mathbf{v}$) and angular ($\omega$) velocity. The second impulse (blue; same magnitude, opposite direction) is applied to the ramp but assuming the ramp has infinite mass, it has no effect. In the second row, the same scenario with a different ramp is depicted. Here, the computed constraint impulse again counteracts penetration, but due to the angle of penetration, the cube now rotates into the opposite direction. This behavior is counter-intuitive, and can be avoided by adding friction constraints. However, without friction, it makes sense: think of both the ramp and the cube as blocks of slippery ice, then the simulated response makes more sense.
+
+- The next section briefly explains the relationship of this straightforward algorithm to the more formal, underlying mathematic problem, the *Linear Complementarity Problem*. You will likely encounter this and related terms rather often.
+
+### Relationship to LCP
+
+- The above procedure is, in academical papers, cast into a mathematical formulation known as the *Linear Complementarity Problem* (LCP) - definition taken from [wikipedia](http://en.wikipedia.org/wiki/Linear_complementarity_problem):
+    - Given a real matrix $\mathbf{M}$ and vector $\mathbf{q}$, the linear complementarity problem seeks vectors $\mathbf{z}$ and $\mathbf{w}$ which satisfy the following constraints:
+        1. $\mathbf{w} = \mathbf{Mz} + \mathbf{q}$
+        2. $\mathbf{w} \ge \mathbf{0}, \mathbf{z} \ge \mathbf{0}$ (that is, each component of these two vectors is non-negative)
+        3. $w_i z_i = 0$ for all i. (The complementarity condition)
+
+- I'll now show how the derivation and procedure is actually exactly such an LCP:
+    - Solve $\dot{C}=\mathbf{J}\mathbf{v}+b = \mathbf{J}(\overline{\mathbf{v}}+\mathbf{M}^{-1}\mathbf{P})+b = \mathbf{J}\mathbf{M}^{-1}\mathbf{P}+(\mathbf{J}\overline{\mathbf{v}}+b)$ subject to two inequality constraints and a complementarity condition:
+    - $\dot{C}\geq 0$
+    - $\mathbf{P}\geq 0$
+    - $\dot{C}\mathbf{P} = \mathbf{0}$
+- The only difference really is that our $w$ ($\dot{C}$) and $M$ ($\mathbf{J}\mathbf{M}^{-1}$) are not a vector and a matrix, respectively, but a scalar and a vector - but that's only because we look at an isolated constraint. If all constraints are combined into one big equation, $\mathbf{J}$ would be a matrix, and we would have a vector of constraints $\dot{\mathbf{C}}$
+- I think it helps intuition a lot if one understands why the above inequality constraints and the complementarity condition are fulfilled by the simple algorithm introduced for collisions:
+    - $\dot{C}\geq 0$ - We computed $\lambda$ by aiming for $\dot{C}=0$; if $\lambda$ turned out to be negative, that was because the bodies would otherwise separate ($\dot{C}> 0$), in which case we set $\lambda:=0$ to let them separate ($\dot{C}> 0$)
+    - $\mathbf{P}\geq 0$ - since $\mathbf{P}=\mathbf{J}^T\lambda$ and we clamp $\lambda\geq 0$, this is always true (the Jacobian points into the correct direction - away from each body).
+    - $\dot{C}\mathbf{P} = \mathbf{0}$ - this one is interesting. It says $\dot{C}=0$ OR $\mathbf{P}=\mathbf{J}^T\lambda = \mathbf{0}$ - this is ensured by how $\lambda$ is computed: the above formula for $\lambda$ is derived with the aim of guaranteeing $\dot{C}=0$.
+        1. If bodies would penetrate, $\dot{C}=0$ is ensured by a positive $\lambda$, so $\dot{C}\mathbf{P} = \mathbf{0}$
+        2. If bodies separate (because of other forces or impulses), the above computation gives a negative $\lambda$, which is then clamped to $\lambda=0$, i.e. $\mathbf{P}=\mathbf{J}^T\lambda = \mathbf{0}$ and thus $\dot{C}\mathbf{P} = \mathbf{0}$
+
+<div id="stairs" class="simulation-container">
+    <h3>Stairs Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="stairsCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>mass:</td><td><input type="number" name="mass" min="0.001" max="100" value="1" /></td></tr>
+            <tr><td>x0:</td><td><input type="number" name="x0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>y0:</td><td><input type="number" name="y0" min="0" max="15" value="13" /></td></tr>
+            <tr><td>theta0:</td><td><input type="number" name="theta0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>vx0:</td><td><input type="number" name="vx0" min="-20" max="20" value="3" /></td></tr>
+            <tr><td>vy0:</td><td><input type="number" name="vy0" min="-20" max="20" value="0" /></td></tr>
+            <tr><td>vAng0:</td><td><input type="number" name="vAng0" min="-10" max="10" value="-0.8" /></td></tr>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
+        </table>
+        <button class="start-button">Start</button>
+        <p class="time">t=0s</p>
+    </div>
+</div>
+
+<div id="domino" class="simulation-container">
+    <h3>Domino Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="dominoCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>domino spacing:</td><td><input type="number" name="dominoSpacing" min="0" max="5" value="1.125" /></td></tr>
+            <tr><td>vAng0:</td><td><input type="number" name="vAng0" min="-40" max="40" value="-10" /></td></tr>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="10" /></td></tr>
+        </table>
+        <button class="start-button">Start</button>
+        <p class="time">t=0s</p>
+    </div>
+</div>
+
+### Notes on the Demos
+
+The demos may look a bit unnatural because I did not include friction. More about this in the next section.
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script is:inline src="/gamePhysics/js/MV.js"></script>
+<script is:inline src="/gamePhysics/js/inequalityConstraints_physics.js"></script>
+<script is:inline src="/gamePhysics/js/inequalityConstraints_sim.js"></script>

@@ -1,0 +1,69 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Friction
+description: Tutorial, derivation and interactive Javascript simulation of 2D rigid body game physics with friction & solver
+---
+
+<div class="thumb tright">
+    <div class="thumbinner" style="width:302px;">
+        <img alt="normal and tangent impulse" src="/gamePhysics/images/Friction.png" width="300" height="220" class="thumbimage" />
+        <div class="thumbcaption">normal and tangent impulse accounting for collision and friction constraints, respectively</div>
+    </div>
+</div>
+
+- The simulations in the previous section, especially the one with the domino pieces, looked a bit unrealistic, because I did not simulate *friction*. Actually, the simulations make much more sense if you image the domino pieces and ground planes to be of very slippery ice. Here, I will briefly show how to add friction - *briefly*, because it is a straightforward extension of the collision constraint method. Friction could be implemented in a variety of other ways, most notably friction forces, but the impulse-based notation is very easy and gives convincing results.
+- The figure on the right illustrates the relation between friction and collision constraints - both act on every contact point, but with different direction and magnitude. The collision constraint impulse applied to body A, $\mathbf{P}_{\mathbf{n},A}$ is a multiple of the surface normal $\mathbf{n}$, while the friction impulse $\mathbf{P}_{\mathbf{t},A}$ is a multiple of the surface *tangent* $\mathbf{t}$.
+- In terms of constraint equations, friction can be seen as a velocity equality constraint aiming for a *tangent velocity* of 0, i.e. $\dot{C}=(\dot{\mathbf{p}}_A-\dot{\mathbf{p}}_B)^T\mathbf{t}=0$. This is just the equation we had in the previous Collision Constraint section, with $\mathbf{n}$ replaced by $\mathbf{t}$. So we can reuse the formula derived for the Jacobian and just replace $\mathbf{n}$ with $\mathbf{t}$:
+
+$$
+\begin{array} {lcl} \dot{C} & = & (\dot{\mathbf{p}_A}-\dot{\mathbf{p}_B})^T\mathbf{t} \\ & = & \begin{bmatrix}t_x\\ t_y\\ (\mathbf{p}_A-\mathbf{c}_A)\times\mathbf{t}\\ -t_x\\ -t_y\\ -(\mathbf{p}_B-\mathbf{c}_B)\times\mathbf{t}\end{bmatrix}^T \begin{bmatrix}v_{A,x}\\v_{A,y}\\\omega_A\\v_{B,x}\\v_{B,y}\\\omega_B\end{bmatrix} = \mathbf{J}_t\mathbf{v}\end{array}
+$$
+
+- The bias term can be set to 0, and the update step again consists of $\mathbf{v}=\mathbf{v}+\mathbf{M}^{-1}\mathbf{P}_t=\mathbf{v}+\mathbf{M}^{-1}\mathbf{J}_t^T\lambda_t$, with $\lambda_t=-\frac{\mathbf{J}_t\mathbf{v}}{\mathbf{J}_t\mathbf{M}^{-1}\mathbf{J}_t^T}$
+- Computing the magnitude of the friction impulse, $\lambda_t$, will give a value that stops the body from moving, no matter how light it is and how big the surface friction actually is. Under more realistic circumstances - [Coulomb friction](http://en.wikipedia.org/wiki/Coulomb_friction) - the friction force magnitude is a fraction of the normal force magnitude, $F_t\leq\mu F_n$, or equivalently (due to $\mathbf{P}=\Delta t\mathbf{F}$) in the impulse domain, $\lambda_t\leq\mu\lambda$. In other words, we compute the friction impulse magnitude $\lambda_t$, but clamp it such that $-\mu\lambda_n \leq \lambda_t \leq \mu\lambda_n$.
+- The actual implementation, once collision constraint impulse have been computed, is straightforward. In each time step of the iteration, and within each contact that is processed, one first computes the normal (collision resolving) impulse and updates the bodies' velocities. Then (before proceeding to the next contact), one takes the updated velocities and the Jacobian of the friction constraint, computes the respective $\lambda_t$, clamps it to the bounds above, and applies the tangent impulse the velocity.
+- Below, I added the same three simulations I used in the collision constraint section, with < 20 lines of code added to simulate friction. You can change the friction $\mu$ to 0 to get the same behavior as in the previous simulations.
+
+<div id="stairs" class="simulation-container">
+    <h3>Stairs Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="stairsFrictionCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>mass:</td><td><input type="number" name="mass" min="0.001" max="100" value="1" /></td></tr>
+            <tr><td>x0:</td><td><input type="number" name="x0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>y0:</td><td><input type="number" name="y0" min="0" max="15" value="13" /></td></tr>
+            <tr><td>theta0:</td><td><input type="number" name="theta0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>vx0:</td><td><input type="number" name="vx0" min="-20" max="20" value="3" /></td></tr>
+            <tr><td>vy0:</td><td><input type="number" name="vy0" min="-20" max="20" value="0" /></td></tr>
+            <tr><td>vAng0:</td><td><input type="number" name="vAng0" min="-10" max="10" value="-0.8" /></td></tr>
+            <tr><td>friction:</td><td><input type="number" name="friction" min="0" max="1" value="0.2" /></td></tr>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
+        </table>
+        <button class="start-button">Start</button>
+        <p class="time">t=0s</p>
+    </div>
+</div>
+
+<div id="domino" class="simulation-container">
+    <h3>Domino Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="dominoFrictionCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>domino spacing:</td><td><input type="number" name="dominoSpacing" min="0" max="5" value="1.125" /></td></tr>
+            <tr><td>vAng0:</td><td><input type="number" name="vAng0" min="-40" max="40" value="-10" /></td></tr>
+            <tr><td>friction:</td><td><input type="number" name="friction" min="0" max="1" value="0.2" /></td></tr>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="10" /></td></tr>
+        </table>
+        <button class="start-button">Start</button>
+        <p class="time">t=0s</p>
+    </div>
+</div>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script is:inline src="/gamePhysics/js/MV.js"></script>
+<script is:inline src="/gamePhysics/js/friction_physics.js"></script>
+<script is:inline src="/gamePhysics/js/friction_sim.js"></script>

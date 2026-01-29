@@ -1,0 +1,117 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Equality Constraints
+description: Tutorial, derivation and interactive Javascript simulation of 2D rigid body game physics with equality constraints (joints) & solver
+---
+
+- This part is hairy, and the reason why I wrote this tutorial/summary in the first place. Much of the scientific literature explains the mathematics in a rather abstract way. After finally understanding both the theoretical and the practical side, I believe it's better to gather an intuitive, less founded understanding first, then proceed to the theory behind it such as LCPs.
+- Constraints are needed for bodies to interact - to avoid penetration when bodies rest on each other, or collide; or when bodies are connected at specific points (joints as for doors, ragdolls, ropes, ...). I found it very instructive to understand different classes of constraint solvers - penalty methods in force, velocity or position space; or direct/simultaneous solvers. Garstenauer gives a really good overview over these. I will present one specific method - the most widespread one - here, then later on describe what class it belongs to and what other classes there exist. For now, it's enough to know it's a sequential impulse-based constraint solver.
+- Constraints are formulated as constraint equations (or inequations). For instance, to model a joint between two bodies connected at points $\mathbf{p}_A$ of body A and $\mathbf{p}_B$ of body B, one starts with the constraint equation $C(\mathbf{p}_A,\mathbf{p}_B) = \|\mathbf{p}_A - \mathbf{p}_B\|_2^2=(\mathbf{p}_A - \mathbf{p}_B)^T(\mathbf{p}_A - \mathbf{p}_B)$ and tries to maintain a value of $C = 0$, i.e. to keep the two points at the same location. A distance constraint would be modeled with $C(\mathbf{p}_A,\mathbf{p}_B) = (\mathbf{p}_A - \mathbf{p}_B)^T(\mathbf{p}_A - \mathbf{p}_B) - L^2 = 0$.
+
+## Impulse and Force Based Constraints
+
+- One way to ensure the constraint is fulfilled is to start at a valid configuration of positions (i.e. $C=0$) and ensure it stays like this by aiming for $\dot{C}=0$ (i.e. aiming for a valid configuration in the velocity domain); this is called a velocity or impulse based constraint solver. An alternative is an acceleration or force based constraint solver - here, the constraint equation is differentiated twice, and one aims for $\ddot{C}=0$. I'll focus on the more common velocity based solvers. The different types of constraint solvers used in contemporary physics engines - impulses vs forces, sequential vs simultaneous, were discussed in [this insightful thread](http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=6481) on the Bullet forum.
+- In velocity based constraint solvers, one searches for a valid configuration $\dot{C}=0$ by directly changing the (linear and angular) velocities of the involved bodies. The velocities are changed by applying *constraint impulses*. Impulses - denoted by $\mathbf{P}$ - lead to a discontinuous change in velocities, weighed by the mass or moment of inertia of the body. It is easy to convert between forces and impulses $\mathbf{P}=\Delta t\mathbf{F}$.
+- Impulses change velocities; they are applied in a similar manner to forces. There, we had
+
+$$
+\mathbf{a} = \begin{bmatrix}a_x\\ a_y\\ \alpha\end{bmatrix} = \mathbf{M}^{-1}\mathbf{F} = \begin{bmatrix}\frac{1}{m} & 0 & 0\\0 & \frac{1}{m} & 0\\0 & 0 & \frac{1}{I}\end{bmatrix}\begin{bmatrix}F_x\\ F_y\\ \tau\end{bmatrix} = \begin{bmatrix}\frac{1}{m} & 0 & 0\\0 & \frac{1}{m} & 0\\0 & 0 & \frac{1}{I}\end{bmatrix}\begin{bmatrix}F_x\\ F_y\\ (\mathbf{p}-\mathbf{c})\times \begin{bmatrix}F_x\\ F_y\end{bmatrix}\end{bmatrix}
+$$
+
+Velocities are changed by impulses via $\mathbf{v}:=\mathbf{v}+\Delta\mathbf{v}$, with
+
+$$
+\Delta\mathbf{v}=\mathbf{M}^{-1}\mathbf{F}\Delta t=\mathbf{M}^{-1}\mathbf{P}=\begin{bmatrix}\frac{1}{m} & 0 & 0\\0 & \frac{1}{m} & 0\\0 & 0 & \frac{1}{I}\end{bmatrix}\begin{bmatrix}P_x\\ P_y\\ P_\alpha\end{bmatrix}=\begin{bmatrix}\frac{1}{m} & 0 & 0\\0 & \frac{1}{m} & 0\\0 & 0 & \frac{1}{I}\end{bmatrix}\begin{bmatrix}P_x\\ P_y\\ (\mathbf{p}-\mathbf{c})\times \begin{bmatrix}P_x\\ P_y\end{bmatrix}\end{bmatrix}
+$$
+
+- Like forces, an impulse really is a 2D vector $\begin{bmatrix}P_x\\ P_y\end{bmatrix}$ that is expanded to a 3D vector $\mathbf{P}=\begin{bmatrix}P_x\\ P_y\\ (\mathbf{p}-\mathbf{c})\times \begin{bmatrix}P_x\\ P_y\end{bmatrix}\end{bmatrix}$ to simplify the formulas.
+- This might look a bit complex at first, but the actual implication is rather straightforward: Physics engines start at an invalid configuration (i.e., where $C\neq 0$), then perform an iteration over all constraints, for each computing the *right* impulse $\mathbf{P}$, changing the velocities via $\mathbf{v}=\mathbf{v}+\mathbf{M}^{-1}\mathbf{P}$. This process is repeated about 4 times, and hopefully, the errors have become small, and the corrected velocities are used to compute the new positions and orientations.
+- Note for native german (also: danish, dutch & russian) speakers: impulse is a *false friend*; *impulse* (eng.) != *Impuls* (dt.); *impulse* (eng.) == *Kraftstoss* (dt.), wheres *momentum* (eng.) == *Impuls* (dt.)
+
+## Computing Constraint Impulses
+
+- This section shows how, given a constraint equation $C=0$, we can derive the required impulse $\mathbf{P}$ to apply to the velocities; it is heavily based on Erin Catto's GDC2009 talk. Concerning notation - thus far, the impulse and velocity vectors had 3 elements, and the mass matrix was 3x3. Depending on whether the constraint involves one or two bodies, the vectors in the following formulation may have 3 or 6 elements, by combining the impulses or velocities for both bodies in one vector.
+- The temporal derivative of a constraint equation $C=0$, according to the chain rule, is $\dot{C}=\frac{\partial{C}}{\partial{\mathbf{q}}}\frac{\partial{\mathbf{q}}}{\partial{t}}=\mathbf{J}\mathbf{v}=0$; $\mathbf{J}$ is the so-called Jacobian, a row vector. $\mathbf{q}$ is a state vector representing the position and orientation of the involved bodies (usually 2). In practice, one adds a *bias* term, to require $\dot{C}=\mathbf{J}\mathbf{v}+b=0$; this term counteracts numerical errors / drifting, more about it at the end of this section. Part of the bias term may also arise from the constraint equation directly (for motors and collision constraints).
+- To compute the constraint impulse $\mathbf{P}$, we need three ingredients:
+    1. To ensure the constraint,
+        $$\dot{C}=\mathbf{J}\mathbf{v}+b=0$$
+    2. Constraint forces or impulses may not add energy to the system, i.e. do work - force times distance: $\mathbf{F}^T\Delta\mathbf{x}=\mathbf{F}^T\Delta t\mathbf{v}=\mathbf{P}^T\mathbf{v}=0$. Since $\mathbf{J}\mathbf{v}=0$, the impulse we search must be a multiple of the transposed Jacobian:
+        $$\mathbf{P}=\lambda\mathbf{J}^T$$
+        NB, some tutorials use the bead-on-a-wire example and state that the constraint force or impulse stands orthogonally on the velocity. This may lead to a misconception; I wouldn't attach much geometrical meaning to $\mathbf{P}^T\mathbf{v}=0$, since both are accumulated vectors. For a joint constraint, the individual impulses roughly point from one point to the other.
+    3. As discussed further above, the impulse is applied to the previously predicted, tentative velocity $\overline{\mathbf{v}}$ via
+        $$\mathbf{v} = \overline{\mathbf{v}} + \mathbf{M}^{-1}\mathbf{P}$$
+
+- Replacing the impulse in equation 3 with $\mathbf{P}=\lambda\mathbf{J}^T$, then replacing the velocity in equation 1 gives $\dot{C}=\mathbf{J}(\overline{\mathbf{v}}+\mathbf{M}^{-1}\lambda\mathbf{J}^T)+b=\mathbf{J}\overline{\mathbf{v}}+\mathbf{J}\mathbf{M}^{-1}\mathbf{J}^T\lambda + b = 0$.
+- Solving for lambda gives the magnitude of the constraint impulse: $\lambda=-\frac{\mathbf{J}\overline{\mathbf{v}}+b}{\mathbf{J}\mathbf{M}^{-1}\mathbf{J}^T}$
+- Then, a new velocity is predicted by $\mathbf{v} = \overline{\mathbf{v}} + \mathbf{M}^{-1}\lambda\mathbf{J}^T$
+- The above computations are performed in two nested loops; the outer one performing a small, usually fixed set of e.g. 4 iterations; the inner loop iterating over all constraints, for each computing the new $\lambda$ and updating the velocities of the involved bodies. Since only velocities change in this loop, the Jacobian can usually be precomputed before starting the iterations.
+- Some notes on the bias term $b$:
+    - using the constraint equations as described above can lead to position drift, this can be avoided by a method called *Baumgarte stabilization*, where the original constraint equation $C$ is fed back into the velocity constraint $\dot{C}$, by using a modified $\dot{C}'=\dot{C}+b=\mathbf{J}\mathbf{v}+b=\mathbf{J}\mathbf{v}+\frac{\beta}{\Delta t}C=0$, with $\beta\in [0; 1]$ (needs to be determined manually).
+    - I don't have an intuitive explanation for this method, but mathematically, the term $\dot{C}'=\dot{C}+\frac{\beta}{\Delta t}C=0$ is a first order linear differential equation, with a solution at $C(t) = C_0 e^{-\frac{\beta}{\Delta t}t}$ - a function that decays exponentially with time to 0, i.e. a valid configuration
+    - In practice, one computes the original constraint $C$, sets $b:=\frac{\beta}{\Delta t}C$ and proceeds with the equations above. I use $\beta=0.2$ and it works well. Why the constant $\beta$ is divided by $\Delta t$ I don't know.
+
+## Example: Complete Joint Constraint Derivation
+
+- This section infers the precise equations for joint constraints used for the rope simulation at the end of this chapter. I think it makes a lot of sense to walk through the complete derivation and discuss some details on the way; that being said, the mathematics here are lengthy, but straightforward linear algebra.
+- The final formulation above does not look complex, but computing the formula of the Jacobian directly (by differentiating $C$ with respect to positions and orientations of both bodies) may actually be rather gory. I find it easier, and Erin Catto recommends this, too, to compute the temporal derivative directly, then rearrange the formula to isolate $\mathbf{v}$ and $\mathbf{J}$.
+- The derivation below is not difficult really but lots of writing; I would recommend to go through it or compute it yourself to get the necessary intuition.
+- Let's take the joint constraint equation: $C(\mathbf{p}_A,\mathbf{p}_B) = (\mathbf{p}_A - \mathbf{p}_B)^T(\mathbf{p}_A - \mathbf{p}_B)=0$:
+- 
+$$
+\begin{array} {lcl} \dot{C} & = & 2(\mathbf{p}_A-\mathbf{p}_B)^T(\dot{\mathbf{p}}_A-\dot{\mathbf{p}}_B) \\ & = & 2(\mathbf{p}_A-\mathbf{p}_B)^T(\mathbf{v}_{\mathbf{c}_A}+\omega_A\times (\mathbf{p}_A-\mathbf{c}_A)-\mathbf{v}_{\mathbf{c}_B}-\omega_B (\mathbf{p}_B-\mathbf{c}_B)) \\ & = & 0\end{array}
+$$
+    - $\mathbf{p}_A$: the point on body A we want to apply the constraint to, and $\mathbf{v}_A$ its linear velocity
+    - $\mathbf{c}_A$: the center of mass / rotation of body A, and $\mathbf{v}_{\mathbf{c}_A}$ its linear velocity
+    - $\omega_A$: the angular velocity of body A (in radians/s)
+    - $\omega\times\begin{bmatrix}p_x\\ p_y\end{bmatrix} = \begin{bmatrix}-\omega p_y \\ \omega p_x\end{bmatrix}$: a pseudo 2D cross product used in computing a point's velocity: $\mathbf{v}_A=\mathbf{v}_{\mathbf{c}_A}+\omega_A\times(\mathbf{p}_A-\mathbf{c}_A)$. $\omega\times\mathbf{q}$ simply computes the normal vector of $\mathbf{q}$ in counter-clockwise direction, and scales it with $\omega$
+    - and the same notation for the point on body B of course
+- this ugly formula needs to be split up into the x and y components to make it even uglier:
+- 
+$$
+\dot{C}=2\begin{bmatrix}p_{x,A}-p_{x,B}\\ p_{y,A}-p_{y,B}\end{bmatrix}^T\begin{bmatrix}v_{x,\mathbf{c}_A}+\omega_A (c_{y,A}-p_{y,A})-v_{x,\mathbf{c}_B}-\omega_B (c_{y,B}-p_{y,B})\\ v_{y,\mathbf{c}_A}+\omega_A (p_{x,A}-c_{x,A})-v_{y,\mathbf{c}_B}-\omega_B (p_{x,B}-c_{x,B})\end{bmatrix}=0
+$$
+- then, the dot product is computed and all the velocity components are put into one vector, giving rise to the following form:
+- 
+$$
+\begin{array} {lcl} \dot{C} & = & 2\begin{bmatrix}p_{x,A}-p_{x,B} \\ p_{y,A}-p_{y,B} \\ (p_{x,A}-p_{x,B})(c_{y,A}-p_{y,A}) + (p_{y,A}-p_{y,B})(p_{x,A}-c_{x,A}) \\ p_{x,B} - p_{x,A} \\ p_{y,B} - p_{y,A} \\ (p_{x,B} - p_{x,A})(c_{y,B}-p_{y,B}) + (p_{y,B} - p_{y,A})(p_{x,B}-c_{x,B})\end{bmatrix}^T\begin{bmatrix}v_{x,\mathbf{c}_A}\\ v_{y,\mathbf{c}_A}\\ \omega_A \\ v_{x,\mathbf{c}_B}\\ v_{y,\mathbf{c}_B} \\ \omega_B\end{bmatrix} \\ & = & 2\begin{bmatrix}p_{x,A}-p_{x,B} \\ p_{y,A}-p_{y,B} \\ -(\mathbf{p}_A-\mathbf{p}_B)\times (\mathbf{p}_A-\mathbf{c}_A) \\ p_{x,B} - p_{x,A} \\ p_{y,B} - p_{y,A} \\ (\mathbf{p}_A-\mathbf{p}_B)\times (\mathbf{p}_B-\mathbf{c}_B)\end{bmatrix}^T\begin{bmatrix}v_{x,\mathbf{c}_A}\\ v_{y,\mathbf{c}_A}\\ \omega_A \\ v_{x,\mathbf{c}_B}\\ v_{y,\mathbf{c}_B} \\ \omega_B\end{bmatrix} = \mathbf{J}\begin{bmatrix}v_{x,\mathbf{c}_A}\\ v_{y,\mathbf{c}_A}\\ \omega_A \\ v_{x,\mathbf{c}_B}\\ v_{y,\mathbf{c}_B}\\ \omega_B\end{bmatrix} = 0\end{array}
+$$
+- That was a bit lengthy but important. One can now simply plug in the above formula for $\mathbf{J}$ into the generic constraint solver discussed above, in addition to the bias parameter $b=\frac{\beta}{\Delta t}C$. This is the general way to go when adding new constraints: one only needs to calculate the Jacobian and the bias factor, then it is straightforward to plug into a constraint solver! Note that in spite of the complex formulas, the computation should be pretty efficient by reusing computed values and using vector instructions.
+- I noted that the constraint impulse has an intrinsic dimensionality of 2 (or four for two bodies) only - $\begin{bmatrix}P_x\\ P_y\end{bmatrix}$ - but is expanded to a vector with 3 elements to incorporate the angular momentum, giving $\mathbf{P}=\begin{bmatrix}P_x\\ P_y\\ (\mathbf{p}-\mathbf{c})\times\begin{bmatrix}P_x\\ P_y\end{bmatrix}\end{bmatrix}$. As you can see, this intrinsic dimensionality is fulfilled by the Jacobian we computed above: Since $\mathbf{P}=\lambda\mathbf{J}^T$, we have $P_x := \lambda 2(p_{x,A}-p_{x,B})$, $P_y := \lambda 2(p_{y,A}-p_{y,B})$. If you arrive at a Jacobian that does not have such a form, you likely made a mistake in your calculation.
+
+## Constraint Solver
+
+- As mentioned during the overvie, modern physic engines seem to use mostly iterative solvers that work as follows (pseudocode):
+
+```javascript
+for i = 1 to nIterations
+    for c in constraints
+        P = computeImpulses(c);
+        c.bodies.applyImpulses(P);
+```
+
+- The set of all constraints are usually coupled: a body that shares two constraints with two other bodies, such as a link in the middle of a chain, is affected (and affects) both connected links. However, this is neglected when solving for pairwise constraints individually, and satisfying one constraint will usually violate the other constraint(s).
+- This type of solving the constraints - similar to the iterative Gauss-Seidel method for linear systems of equations - is just one way, but the most widespread and efficient one apparently.
+- Alternatively, one could attempt to solve the collisions directly, a process that can be sped up by isolating uncoupled submatrices etc., but it seems like the iterative methods are good enough and most efficient.
+
+<div class="simulation-container">
+    <h3>Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="equalityConstraintsCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
+        </table>
+        <button name="startStopButton" class="start-button">Start</button>
+        <p id="time" class="time">t=0s</p>
+    </div>
+</div>
+
+### Notes
+
+Note, I did not add parameters to this simulation; frankly, because using links with less mass leads to jitter and I didn't bother taking care of it. I simply went to 1/4th of the previous time step size - 4ms. I suppose that rope simulations with a larger number of links always lead to problems; if one uses not sequential impulses but springs to simulate it, one gets a stiff system of equations. There's probably a way to take better care of it though; but keep in mind a rope is a rather extreme application of joints because of the many couplings. Other, similarly complex applications of joint chains like ragdolls are treated specifically as far as I know.
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script is:inline src="/gamePhysics/js/MV.js"></script>
+<script is:inline src="/gamePhysics/js/equalityConstraints_physics.js" ></script>
+<script is:inline src="/gamePhysics/js/equalityConstraints_sim.js"></script>

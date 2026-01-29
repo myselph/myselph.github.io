@@ -1,0 +1,69 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Unconstrained Physics
+description: Tutorial, derivation and interactive Javascript simulation of 2D rigid body game physics without constraints
+---
+
+- This section deals with unconstrained 2D physics, i.e. steps 2 and 5 of the above algorithm overview. It's straightforward, rather simple mathematics, but definitely worth writing down.
+- A body's state in 2D is defined by its position ($x$, $y$), orientation ($\theta$), linear velocity ($v_x$, $v_y$) and angular velocity ($\omega$)
+- the acceleration vector for a body consists of $\mathbf{a} = \begin{bmatrix}a_x\\ a_y\\ \alpha\end{bmatrix} = \mathbf{M}^{-1}\mathbf{f} = \begin{bmatrix}\frac{1}{m} & 0 & 0\\0 & \frac{1}{m} & 0\\0 & 0 & \frac{1}{I}\end{bmatrix}\begin{bmatrix}F_x\\ F_y\\ \tau\end{bmatrix}$ with
+    - $a_x$ and $a_y$: linear acceleration
+    - $\alpha$: angular acceleration
+    - $m$: the body's mass
+    - $I$: a body's moment of inertia (rotation equivalent of mass)
+        - the analytical derivation can be complex; it's a surface interval, $I=\int_S \rho(\mathbf{r}) \mathbf{r}^2 dS$
+        - for a 2D box with width W, height H, and uniform density $\rho = \frac{m}{WH}$, the solution is $I=\frac{m(W^2+H^2)}{12}$
+        - you can find precomputed formulas for other body shapes [here](http://en.wikipedia.org/wiki/List_of_moments_of_inertia)
+        - you can also compute it numerically, by uniformly sampling points within the body and summing up the integrand, weighted by your sampling cell size. I'll only use boxes and employ the formula above.
+- $\tau$: the torque - rotation equivalent of force, defined as $(\mathbf{p} - \mathbf{c})\times \begin{bmatrix}F_x\\ F_y\end{bmatrix}$, with
+    - $\mathbf{p}-\mathbf{c}$ the vector from the body's center of mass to the point where the force is applied
+    - $\times$ denoting the cross product; in 2D, the equivalent is $x_1y_2-x_2y_1$
+    - i.e. torque is a function of force and force application point, not an independent variable. In other words, a 2D force vector $\begin{bmatrix}F_x\\ F_y\end{bmatrix}$ is expanded into a 3D vector $\mathbf{f}=\begin{bmatrix}F_x\\F_y\\\tau(\mathbf{p}, \mathbf{c}, F_x, F_y)\end{bmatrix}$. This is also important to understand when computing constraint forces - there is no such thing as a constraint torque that is directly computed. One computed 2D constraint forces, and the constraint torque is just a function of this force.
+- the body's velocity is $\mathbf{v}=\begin{bmatrix}v_x\\ v_y\\ \omega\end{bmatrix}$, and it can be derived from the previous velocity by numerical integration schemes such as Euler's method: $\mathbf{v}(t+\Delta t) = \mathbf{v}(t) + \Delta t \cdot \mathbf{a}(t) = \begin{bmatrix}v_x(t)\\ v_y(t)\\ \omega(t)\end{bmatrix} +\Delta t \begin{bmatrix}a_x(t)\\ a_y(t)\\ \alpha(t)\end{bmatrix}$
+- its position and orientiation is $\mathbf{x}=\begin{bmatrix}x\\ y\\ \theta\end{bmatrix}$ and is similarly computed by integration, $\mathbf{x}(t+\Delta t) = \mathbf{x}(t)+\Delta t\cdot\mathbf{v}(t+\Delta t)$
+- For drawing, another formula is needed. A body is usually described by the absolute (world) position of its center of mass, its orientation, and the (constant) relative positions of its vertices. The absolute position of a vertex $\mathbf{r}$ given in relative (to the center of mass, with zero rotation) coordinates for a body centered at $\mathbf{c}$ and orientation $\theta$, is $\mathbf{r}_{world} = \mathbf{c} + \mathbf{R}(\theta)\mathbf{r}$, with the 2D rotation matrix $\mathbf{R}(\theta)=\begin{bmatrix}cos\theta & -sin\theta \\ sin\theta & cos\theta\end{bmatrix}$
+- One mostly deals with the inverse of the mass matrix, so bodies usually store the inverse of their mass and the inverse of the moment of inertia. Also, this simplifies dealing with immovable objects like ground planes and walls - the inverse of their mass and of their moment of inertia is simply set to 0, meaning no forces (and for collisions, no impulses) will affect them.
+- In source code, one might not use vector and matrix notation as strictly as above - e.g., since the mass matrix is always diagonal, it is faster to implement it as a mass vector that is multiplied with acceleration element-wise; and in 3D, the inertia tensor becomes a 3D matrix. I will use this notation, however, because I believe it is better and shorter for didactic reasons.
+- Using the above formulas, one can implement a simple physics engine for unconstrained motion, see the end of this page.
+- Unconstrained motion in 3D is a bit more complex - in particular, rotations - but not that hard, either. David Baraff wrote a [great document](http://www.pixar.com/companyinfo/research/pbm2001/pdf/notesg.pdf) about it for SIGGRAPH2001 ([link](http://www.pixar.com/companyinfo/research/pbm2001/) to the course homepage with additional material). I actually learnt the 3D portion first with Baraff's tutorial, then went back to 2D because visualization is easier.
+
+<div class="simulation-container">
+    <div class="simulation-canvas-wrapper">
+        <canvas id="unconstrainedMotionCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>mass (kg):</td><td><input type="number" name="mass" min="0.001" max="100" value="1" /></td></tr>
+            <tr><td>x0 (m):</td><td><input type="number" name="x0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>y0 (m):</td><td><input type="number" name="y0" min="0" max="15" value="13" /></td></tr>
+            <tr><td>theta0 (rad):</td><td><input type="number" name="theta0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>vx0 (m/s):</td><td><input type="number" name="vx0" min="-20" max="20" value="3" /></td></tr>
+            <tr><td>vy0 (m/s):</td><td><input type="number" name="vy0" min="-20" max="20" value="0" /></td></tr>
+            <tr><td>vAng0 (rad/s):</td><td><input type="number" name="vAng0" min="-10" max="10" value="-0.8" /></td></tr>
+            <tr><td>forceX (Newton):</td><td><input type="number" name="forceX" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>forceY (Newton):</td><td><input type="number" name="forceY" min="-10" max="10" value="-9.81" /></td></tr>
+            <tr><td>forcePoint:</td><td><select id="forcePoint">
+                                    <option>center</option>
+                                    <option>lower right</option>
+                                    <option>lower left</option>
+                                    <option>upper left</option>
+                                    <option>upper right</option></select></td></tr>
+            <tr><td>tStop (s):</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
+        </table>
+        <button name="startStopButton" class="start-button">Start</button>
+        <p id="time" class="time">t=0s</p>
+    </div>
+</div>
+
+### Notes on the source code
+
+Most of the relevant code is in [unconstrained_physics.js](/gamePhysics/js/unconstrained_physics.js) and in [unconstrained_sim.js](/gamePhysics/js/unconstrained_sim.js), except for a small math library for vector operations, which is in [MV.js](/gamePhysics/js/MV.js). For plotting, I use [Chart.js](https://www.chartjs.org/).
+
+The code is rather readable I hope, and serves as a basis for the next two pages about constraints. The only ugly portion is the plotting part, but the physics code is pretty compact: there's a class Body and a class World. Bodies are instantiated and added to an instantiated world, then one steps through time by calling world.step() in each time step, followed by redrawing the bodies.
+
+Please get in touch with me if anything is wrong, doesn't work or is unclear.
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script is:inline src="/gamePhysics/js/MV.js"></script>
+<script is:inline src="/gamePhysics/js/unconstrained_physics.js"></script>
+<script is:inline src="/gamePhysics/js/unconstrained_sim.js"></script>

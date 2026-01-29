@@ -1,0 +1,20 @@
+---
+layout: ../../layouts/PhysicsLayout.astro
+title: Links
+description: Collection of useful links about Game Physics
+---
+
+There is a large number of literature about physics engines available online. The problem is, some tutorials and papers are based on outdated methods (constraint forces for resting and colliding contacts); others are rather scientific and hard to deal with if one doesn't have an intuitive understanding of the material beforehand; and yet others simply omit the hard parts or the math and show the "obvious" parts of game physics, only. Here is an ordered list of material I found very useful:
+
+- [Tonge (2013)](https://box2d.googlecode.com/files/Tonge_Richard_PhysicsForGame.pdf) - very good overview over PhysX. Read this to get started with physics engines. I'd skip the LCP part if you are new to it.
+- [Catto (2009)](https://box2d.googlecode.com/files/GDC2009_ErinCatto.zip) - Excellent introduction to impulse-based constraint solvers. Also contains slimmed down version of Box2D.
+- SIGGRAPH 2001 course:
+    1. [Baraff (2001)](http://www.pixar.com/companyinfo/research/pbm2001/pdf/notesg.pdf) for 3D unconstrained motion
+    2. [Witkin (2001)](http://www.pixar.com/companyinfo/research/pbm2001/pdf/notesf.pdf) on computing constraint forces
+- [Garstenauer (2006)](http://www.digitalrune.com/Portals/0/Documents/A%20Unified%20Framework%20for%20Rigid%20Body%20Dynamics.pdf) - very good in-depth thesis. Not too good for starters, but the most and best structured material on constraint solvers I've seen so far
+- [insightful thread](http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=6481) about constraint solvers in contemporary physics engines by some gurus from the field
+- [literature list](http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=63) in the Bullet forum
+- [Slides](https://bullet.googlecode.com/files/GDC2013_ErwinCoumans_GPU_rigid_body_simulation.pdf) and [paper](http://www.multithreadingandvfx.org/course_notes/GPU_rigidbody_using_OpenCL.pdf) of Erwin Coumans' [Bullet](http://www.bulletphysics.org/) 3.0 rewrite to include GPU support. Contains a lot of useful information about Bullet internals.
+- The code in my demos is intentionally very succinct, close to the text, and unoptimized to keep it as readable as possible. There are full blown Javascript physics engines; e.g., [Stefan Hedberg](https://github.com/schteppe) wrote both a 2D and 3D engine in Js.
+
+Once you know the *jargon* - velocity vs. force constraints, LCPs, AABBs etc. - it's easy to find more in-depth material.
