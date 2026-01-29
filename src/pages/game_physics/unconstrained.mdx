@@ -25,7 +25,7 @@ description: Tutorial, derivation and interactive Javascript simulation of 2D ri
 - One mostly deals with the inverse of the mass matrix, so bodies usually store the inverse of their mass and the inverse of the moment of inertia. Also, this simplifies dealing with immovable objects like ground planes and walls - the inverse of their mass and of their moment of inertia is simply set to 0, meaning no forces (and for collisions, no impulses) will affect them.
 - In source code, one might not use vector and matrix notation as strictly as above - e.g., since the mass matrix is always diagonal, it is faster to implement it as a mass vector that is multiplied with acceleration element-wise; and in 3D, the inertia tensor becomes a 3D matrix. I will use this notation, however, because I believe it is better and shorter for didactic reasons.
 - Using the above formulas, one can implement a simple physics engine for unconstrained motion, see the end of this page.
-- Unconstrained motion in 3D is a bit more complex - in particular, rotations - but not that hard, either. David Baraff wrote a [great document](http://www.pixar.com/companyinfo/research/pbm2001/pdf/notesg.pdf) about it for SIGGRAPH2001 ([link](http://www.pixar.com/companyinfo/research/pbm2001/) to the course homepage with additional material). I actually learnt the 3D portion first with Baraff's tutorial, then went back to 2D because visualization is easier.
+- Unconstrained motion in 3D is a bit more complex - in particular, rotations - but not that hard, either. David Baraff wrote a [great document](https://graphics.pixar.com/pbm2001/pdf/notesg.pdf) about it for SIGGRAPH2001 ([link](https://graphics.pixar.com/pbm2001/) to the course homepage with additional material). I actually learnt the 3D portion first with Baraff's tutorial, then went back to 2D because visualization is easier.
 
 <div class="simulation-container">
     <div class="simulation-canvas-wrapper">
@@ -34,21 +34,21 @@ description: Tutorial, derivation and interactive Javascript simulation of 2D ri
     <div class="simulation-controls">
         <table>
             <tr><td>mass (kg):</td><td><input type="number" name="mass" min="0.001" max="100" value="1" /></td></tr>
-            <tr><td>x0 (m):</td><td><input type="number" name="x0" min="-10" max="10" value="0" /></td></tr>
-            <tr><td>y0 (m):</td><td><input type="number" name="y0" min="0" max="15" value="13" /></td></tr>
-            <tr><td>theta0 (rad):</td><td><input type="number" name="theta0" min="-10" max="10" value="0" /></td></tr>
-            <tr><td>vx0 (m/s):</td><td><input type="number" name="vx0" min="-20" max="20" value="3" /></td></tr>
-            <tr><td>vy0 (m/s):</td><td><input type="number" name="vy0" min="-20" max="20" value="0" /></td></tr>
-            <tr><td>vAng0 (rad/s):</td><td><input type="number" name="vAng0" min="-10" max="10" value="-0.8" /></td></tr>
-            <tr><td>forceX (Newton):</td><td><input type="number" name="forceX" min="-10" max="10" value="0" /></td></tr>
-            <tr><td>forceY (Newton):</td><td><input type="number" name="forceY" min="-10" max="10" value="-9.81" /></td></tr>
-            <tr><td>forcePoint:</td><td><select id="forcePoint">
+            <tr><td>$x_0$ (m):</td><td><input type="number" name="x0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>$y_0$ (m):</td><td><input type="number" name="y0" min="0" max="15" value="13" /></td></tr>
+            <tr><td>$\theta_0$ (rad):</td><td><input type="number" name="theta0" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>$v_{x_0}$ (m/s):</td><td><input type="number" name="vx0" min="-20" max="20" value="3" /></td></tr>
+            <tr><td>$v_{y_0}$ (m/s):</td><td><input type="number" name="vy0" min="-20" max="20" value="0" /></td></tr>
+            <tr><td>$\omega_0$ (rad/s):</td><td><input type="number" name="vAng0" min="-10" max="10" value="-0.8" /></td></tr>
+            <tr><td>$force_X$ (N):</td><td><input type="number" name="forceX" min="-10" max="10" value="0" /></td></tr>
+            <tr><td>$force_Y$ (N):</td><td><input type="number" name="forceY" min="-10" max="10" value="-9.81" /></td></tr>
+            <tr><td>force point:</td><td><select id="forcePoint">
                                     <option>center</option>
                                     <option>lower right</option>
                                     <option>lower left</option>
                                     <option>upper left</option>
                                     <option>upper right</option></select></td></tr>
-            <tr><td>tStop (s):</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
+            <tr><td>$t_{stop}$ (s):</td><td><input type="number" name="tStop" min="0" max="100" value="3" /></td></tr>
         </table>
         <button name="startStopButton" class="start-button">Start</button>
         <p id="time" class="time">t=0s</p>
