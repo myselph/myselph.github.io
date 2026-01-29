@@ -63,6 +63,21 @@ $$
     </div>
 </div>
 
+<div id="boxes" class="simulation-container">
+    <h3>Boxes Example</h3>
+    <div class="simulation-canvas-wrapper">
+        <canvas id="boxesFrictionCanvas"></canvas>
+    </div>
+    <div class="simulation-controls">
+        <table>
+            <tr><td>friction:</td><td><input type="number" name="friction" min="0" max="1" value="0.2" /></td></tr>
+            <tr><td>tStop:</td><td><input type="number" name="tStop" min="0" max="100" value="6" /></td></tr>
+        </table>
+        <button class="start-button">Start</button>
+        <p class="time">t=0s</p>
+    </div>
+</div>
+
 <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script is:inline src="/gamePhysics/js/MV.js"></script>
 <script is:inline src="/gamePhysics/js/friction_physics.js"></script>

@@ -152,6 +152,59 @@ function initFrictionSim() {
             step();
         });
     })();
+
+    // Boxes Demo
+    (function () {
+        const chart = setupChart('boxesFrictionCanvas');
+        let simulationRunning = false;
+        const startStopButton = document.querySelector('#boxes .start-button');
+        const timeP = document.querySelector('#boxes .time');
+
+        startStopButton.addEventListener('click', () => {
+            if (!simulationRunning) {
+                simulationRunning = true;
+                startStopButton.textContent = "Stop";
+            } else {
+                simulationRunning = false;
+                startStopButton.textContent = "Start";
+                return;
+            }
+
+            const friction = parseFloat(document.querySelector('#boxes input[name=friction]').value) || 0.2;
+            const tStop = parseFloat(document.querySelector('#boxes input[name=tStop]').value) || 6;
+
+            const world = new World();
+            world.setFriction(friction);
+            const mass = 1;
+            const groundPlane = new Body([[10, -2], [-10, -2], [-10, 2], [10, 2]], [0, -2], 0, 0, 0, [0, 0], 0);
+            world.addBody(groundPlane);
+
+            for (let x = -5; x <= 5; x += 2.5) {
+                for (let y = 4; y <= 32; y += 2.5) {
+                    const w = 1.3 + 0.5 * Math.random();
+                    const moi = mass / 12 * (w * w + w * w);
+                    const box = new Body([[w / 2, -w / 2], [-w / 2, -w / 2], [-w / 2, w / 2], [w / 2, w / 2]], [x, y], Math.random(), 1 / mass, 1 / moi, [0, 0], 0);
+                    box.addForce([0, -9.81 * mass]);
+                    world.addBody(box);
+                }
+            }
+
+            let t = 0;
+            function step() {
+                if (t >= tStop || !simulationRunning) {
+                    startStopButton.textContent = "Start";
+                    simulationRunning = false;
+                    return;
+                }
+                world.step();
+                drawWorld(chart, world);
+                t += world.dt;
+                timeP.textContent = t.toPrecision(3) + "s";
+                setTimeout(step, world.dt * 1000);
+            }
+            step();
+        });
+    })();
 }
 
 if (typeof Chart !== 'undefined') {
