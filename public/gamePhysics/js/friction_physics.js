@@ -45,7 +45,7 @@ var Body = function (vertices, center, theta, mInv, moiInv, vLin, vAng) {
 		// only recompute if theta has changed since the last call.
 		if (this.theta !== rotMatTheta) {
 			rotationMatrix = [[Math.cos(this.theta), -Math.sin(this.theta)],
-				[Math.sin(this.theta), Math.cos(this.theta)]];
+			[Math.sin(this.theta), Math.cos(this.theta)]];
 			rotMatTheta = this.theta;
 		}
 		return rotationMatrix;
@@ -55,7 +55,7 @@ var Body = function (vertices, center, theta, mInv, moiInv, vLin, vAng) {
 		var rotationMatrix = this.getRotationMatrix();
 		for (var i = 0; i < this.vertices.length; i++) {
 			vertsAbsolute.push(MV.VpV(this.center,
-					MV.MxV(rotationMatrix, this.vertices[i])));
+				MV.MxV(rotationMatrix, this.vertices[i])));
 		}
 		return vertsAbsolute;
 	};
@@ -120,8 +120,8 @@ function getCollisionCandidates(bodies) {
 // used extensively during collision detection.
 function computeFaceNormals(bodies, collisionCandidates) {
 	var sortedBodies = collisionCandidates.map(function (cb) {
-			return cb[0];
-		})
+		return cb[0];
+	})
 		.sort()
 		.filter(function (b, i, arr) {
 			return (i === 0 || arr[i] !== arr[i - 1]);
@@ -152,7 +152,7 @@ function linesIntersect(X, Y, A, B) {
 	var lambda = lambdaNominator / denominator;
 	if (lambda < 0 || lambda > 1)
 		return false
-		var alphaNominator = (Y[1] - X[1]) * (A[0] - X[0]) - (Y[0] - X[0]) * (A[1] - X[1]);
+	var alphaNominator = (Y[1] - X[1]) * (A[0] - X[0]) - (Y[0] - X[0]) * (A[1] - X[1]);
 	var alpha = alphaNominator / denominator;
 	if (alpha < 0 || alpha > 1)
 		return false;
@@ -174,8 +174,8 @@ function getContactsFromBodyPair(bodyA, bodyB) {
 		}
 		// if any distance is >= 0, then point pAcur of body A is not in body B
 		if (distances.some(function (d) {
-				return d >= 0;
-			})) {
+			return d >= 0;
+		})) {
 			continue;
 		}
 		// now determine the right collision face. I define it as the one
@@ -199,7 +199,7 @@ var World = function () {
 	this.beta = 0.2;
 	this.bodies = [];
 	this.t = 0;
-  this.friction = 0.2;
+	this.friction = 0.2;
 	this.contacts = [];
 	this.step = function () {
 		/***** 1. collision detection *****/
@@ -240,10 +240,10 @@ var World = function () {
 	this.addBody = function (body) {
 		this.bodies.push(body);
 	};
-  
-  this.setFriction = function(friction) {
-    this.friction = friction;
-  };
+
+	this.setFriction = function (friction) {
+		this.friction = friction;
+	};
 
 	// private function. Make sure to call with apply() and pass in
 	// the right world object.
@@ -265,7 +265,7 @@ var World = function () {
 			// a returned contact presents a point of body A penetrating a face of
 			// body B in the first example, and vice versa for the second invocation.
 			var cs = getContactsFromBodyPair(this.bodies[collisionCandidates[i][0]],
-					this.bodies[collisionCandidates[i][1]]);
+				this.bodies[collisionCandidates[i][1]]);
 			this.contacts = this.contacts.concat(cs);
 		}
 
@@ -282,18 +282,18 @@ var World = function () {
 		var bias = [];
 		var lambdaAccumulated = [];
 		var Jn = [];
-    var Jt = [];
+		var Jt = [];
 
 		for (var i = 0; i < this.contacts.length; i++) {
 			// assemble the inverse mass vector (usually a matrix,
 			// but a diagonal one, so I can replace it with a vector
 			var contact = this.contacts[i];
 			MInv[i] = [contact.bodyA.mInv,
-				contact.bodyA.mInv]
-			.concat(contact.bodyA.moiInv)
-			.concat([contact.bodyB.mInv,
-					contact.bodyB.mInv])
-			.concat(contact.bodyB.moiInv);
+			contact.bodyA.mInv]
+				.concat(contact.bodyA.moiInv)
+				.concat([contact.bodyB.mInv,
+				contact.bodyB.mInv])
+				.concat(contact.bodyB.moiInv);
 			// compute the Jacobians (they don't change in the iterations)
 			var Jn_vLinA = contact.normal;
 			var Jn_vAngA = MV.cross2(MV.VmV(contact.pA, contact.bodyA.center), contact.normal);
@@ -301,16 +301,16 @@ var World = function () {
 			var Jn_vAngB = -MV.cross2(MV.VmV(contact.pB, contact.bodyB.center), contact.normal);
 			Jn[i] = Jn_vLinA.concat(Jn_vAngA).concat(Jn_vLinB).concat(Jn_vAngB);
 
-      // Jacobian for friction - like Jacobian for collision,
-      // but with tangent in place of normal
-      var tangent = [-contact.normal[1], contact.normal[0]];
-      var Jt_vLinA = tangent;
+			// Jacobian for friction - like Jacobian for collision,
+			// but with tangent in place of normal
+			var tangent = [-contact.normal[1], contact.normal[0]];
+			var Jt_vLinA = tangent;
 			var Jt_vAngA = MV.cross2(MV.VmV(contact.pA, contact.bodyA.center), tangent);
 			var Jt_vLinB = MV.SxV(-1, tangent);
 			var Jt_vAngB = -MV.cross2(MV.VmV(contact.pB, contact.bodyB.center), tangent);
 			Jt[i] = Jt_vLinA.concat(Jt_vAngA).concat(Jt_vLinB).concat(Jt_vAngB);
 
-      
+
 			/* for restitution (bouncing off)
 			var tmp = MV.VmV(contact.pB, contact.bodyB.center);
 			var vB = MV.VpV(contact.bodyB.vLin, MV.SxV(contact.bodyB.vAng, [-tmp[1], tmp[0]]));
@@ -319,7 +319,7 @@ var World = function () {
 			 */
 			var vPreNormal = 0; //MV.dot(MV.VmV(vA, vB), contact.normal);
 			var C = MV.dot(MV.VmV(contact.pA, contact.pB),
-					contact.normal);
+				contact.normal);
 			bias[i] = this.beta / this.dt * ((C < 0) ? C : 0) + 0.2 * vPreNormal;
 			lambdaAccumulated[i] = 0;
 		}
@@ -346,15 +346,15 @@ var World = function () {
 				bodyA.vAng = v[2];
 				bodyB.vLin = v.slice(3, 5);
 				bodyB.vAng = v[5];
-        
-        // friction stuff
-        var lambdaFriction = - (MV.dot(Jt[j], v) + 0*bias[j]) / MV.dot(Jt[j], MV.VxV(MInv[j], Jt[j]));
-        if (lambdaFriction > this.friction*lambda) {
-          lambdaFriction = this.friction*lambda;
-        } else if (lambdaFriction < -this.friction*lambda) {
-          lambdaFriction = -this.friction*lambda;
-        }
-        v = MV.VpV(v, MV.VxV(MInv[j], MV.SxV(lambdaFriction, Jt[j])));
+
+				// friction stuff
+				var lambdaFriction = - (MV.dot(Jt[j], v) + 0 * bias[j]) / MV.dot(Jt[j], MV.VxV(MInv[j], Jt[j]));
+				if (lambdaFriction > this.friction * lambda) {
+					lambdaFriction = this.friction * lambda;
+				} else if (lambdaFriction < -this.friction * lambda) {
+					lambdaFriction = -this.friction * lambda;
+				}
+				v = MV.VpV(v, MV.VxV(MInv[j], MV.SxV(lambdaFriction, Jt[j])));
 				bodyA.vLin = v.slice(0, 2);
 				bodyA.vAng = v[2];
 				bodyB.vLin = v.slice(3, 5);
