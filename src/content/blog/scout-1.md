@@ -1,6 +1,6 @@
 ---
-title: 'Card Playing AI - Part 1'
-description: 'Foundations of an AI playing Scout'
+title: 'Scout Card Playing AI'
+description: 'Fun with an AI playing Scout'
 pubDate: 'Mar 8 2026'
 heroImage: '../../assets/scout.png'
 ---
@@ -147,7 +147,6 @@ players compete against each other, and train them on that data), and revisit
 imitation learning if necessary.
 
 There were two architectural decisions to make early on:
-
 1. What the inputs and outputs of the neural net should be
 1. How to train the neural net
 
@@ -230,6 +229,15 @@ or PPO have a very hard time learning the concepts of groups and runs from
 scratch.
 
 
+## Web App
+I also wrote a web-app that allows a human to play against `PlanningPlayer` and
+the simple MLP player - you can find it at https://scout-app-kappa.vercel.app/.
+The frontend is React, the backend is Flask, it's all written to run as a Vercel
+Function (state being stored in Redis). Vercel has limitations on how many
+dependencies one can bring in, and PyTorch easily exceeded that, so I ported the
+trained MLP PyTorch model to numpy and use that for inference instead.
+
+
 ## Limitations and Conclusions
 * I focused all my efforts on the 5-player scenario; 3- and 4-player
 games seem to require rather different strategies, and at least initially I
@@ -253,13 +261,5 @@ On a scientific level, I feel this can be a considered a "solved problem" as
 AlphaGo, AlphaStar, AlphaZero and MuZero have shown. On my hobby project here,
 not yet :)
 * I may wrap the project up here, or keep going with Transformers and 3/4 player
-scenarios.
-
-## Web App
-I also wrote a web-app that allows a human to play against `PlanningPlayer` and
-the simple MLP player - you can find it at https://scout-app-kappa.vercel.app/.
-The frontend is React, the backend is Flask, it's all written to run as a Vercel
-Function (state being stored in Redis). Vercel has limitations on how many
-dependencies one can bring in, and PyTorch easily exceeded that, so I ported the
-trained MLP PyTorch model to numpy and use that for inference instead.
-
+scenarios. In any case, the code is at my github repo, [scout-ai](https://github.com/myselph/scout-ai) for the 
+engine and learning, [scout-app](https://github.com/myselph/scout-app) for the web app.
