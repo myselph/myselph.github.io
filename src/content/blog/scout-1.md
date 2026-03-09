@@ -297,3 +297,4 @@ shown. For projects with more limited resources (eg my hobby project here), the
 overhead is significant.
 * The code is at my github repo, [scout-ai](https://github.com/myselph/scout-ai) for the 
 engine and learning, [scout-app](https://github.com/myselph/scout-app) for the web app.
+* Thanks to Roman for fruitful discussions and trying out the various AI players.
